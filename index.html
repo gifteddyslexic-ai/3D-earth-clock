@@ -938,16 +938,19 @@
     const earthOrbitGroup = new THREE.Group();
     scene.add(earthOrbitGroup);
 
-    // Axial tilt — fixed in inertial space, always pointing toward the "pole star".
-    // The tilt angle never changes over the year. Seasons happen only because Earth
-    // moves around the Sun: at northern winter solstice the fixed north end of the
-    // axis is oriented away from the Sun; at northern summer solstice it is toward
-    // the Sun; at equinoxes it is sideways to the Sun.
+    // Axial tilt — fixed in inertial space (always aims at the "pole star").
+    // Classic top-down (from +Y) layout:
+    //   • Axis leans toward +X and never changes direction in space
+    //   • NH winter solstice (~Dec 21): Earth at +X → north leans *away* from Sun
+    //   • NH summer solstice (~Jun 21): Earth at −X → north leans *toward* Sun
+    //   • Equinoxes: Earth at ±Z → lean is sideways to the Sun
+    // Orbit group only translates — it must never rotate, or the axis would
+    // track the Sun and north would always lean the same way relative to it.
     const EARTH_TILT_RAD = 23.44 * (Math.PI / 180);
-    const WINTER_SOLSTICE_DAY = 355; // ~Dec 21 — north pole max away from Sun
+    const WINTER_SOLSTICE_DAY = 355; // ~Dec 21
     const earthTiltGroup = new THREE.Group();
-    // Tilt once: north (+Y) leans toward +Z in world space and stays there.
-    earthTiltGroup.rotation.set(EARTH_TILT_RAD, 0, 0);
+    // R_z(−tilt): local +Y (north) → (sin t, cos t, 0) leans toward world +X
+    earthTiltGroup.rotation.set(0, 0, -EARTH_TILT_RAD);
     earthOrbitGroup.add(earthTiltGroup);
 
     const earthGroup = new THREE.Group();
@@ -1150,13 +1153,13 @@
       }
 
       // Match position formula: x = r·cosθ, z = −r·sinθ  →  θ = atan2(−z, x)
-      // Inverse of: θ = ((day - WINTER_SOLSTICE_DAY)/365.25)*2π - π/2
-      //   → day = WINTER_SOLSTICE_DAY + ((θ + π/2)/2π)*365.25
+      // Inverse of: θ = ((day - WINTER_SOLSTICE_DAY)/365.25)*2π
+      //   → day = WINTER_SOLSTICE_DAY + (θ/2π)*365.25
       const angle = Math.atan2(-planeHit.z, planeHit.x);
 
       if (lastOrbitDragAngle === null) {
         // First sample: snap dayOfYear to absolute angle on the ring
-        let newDay = WINTER_SOLSTICE_DAY + ((angle + Math.PI / 2) / (Math.PI * 2)) * 365.25;
+        let newDay = WINTER_SOLSTICE_DAY + (angle / (Math.PI * 2)) * 365.25;
         newDay = ((newDay % 365.25) + 365.25) % 365.25;
         dayOfYear = newDay;
       } else {
@@ -1606,16 +1609,18 @@
       // Counter-clockwise orbit when viewed from above the north ecliptic pole (+Y).
       // dayOfYear is continuous (includes fraction of day) so orbit always
       // advances in lockstep with rotation in both modes.
-      // Orbit by translation only — never rotate earthOrbitGroup, so the tilted
-      // axis stays fixed in space (always aims at the same "pole star").
-      // At WINTER_SOLSTICE_DAY: orbitAngle = −π/2 → Earth at (0,0,+r) → fixed
-      // north end of the axis is oriented directly away from the Sun.
+      // Orbit by translation only — never rotate earthOrbitGroup.
+      // θ = 0 at NH winter solstice → Earth at (+r, 0, 0); fixed north lean
+      // toward +X is then directly *away* from the Sun.
+      // θ = π at NH summer solstice → Earth at (−r, 0, 0); north lean toward Sun.
       const orbitAngle =
-        ((dayOfYear - WINTER_SOLSTICE_DAY) / 365.25) * Math.PI * 2 - Math.PI / 2;
+        ((dayOfYear - WINTER_SOLSTICE_DAY) / 365.25) * Math.PI * 2;
       const oldEarthPos = earthOrbitGroup.position.clone();
 
-      earthOrbitGroup.rotation.set(0, 0, 0); // lock: no orbital precession of the axis
-      earthTiltGroup.rotation.set(EARTH_TILT_RAD, 0, 0); // lock: constant pole-star aim
+      // Hard-lock orientation every frame (guards against any accidental rotation)
+      earthOrbitGroup.rotation.set(0, 0, 0);
+      earthTiltGroup.rotation.set(0, 0, -EARTH_TILT_RAD);
+
       earthOrbitGroup.position.x = orbitRadius * Math.cos(orbitAngle);
       earthOrbitGroup.position.z = -orbitRadius * Math.sin(orbitAngle);
 
