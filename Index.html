@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Globe & Dual Observer Clocks</title>
+
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #030712;
+      color: #F8FAFC;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .ui-panel {
+      pointer-events: auto !important;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Top Left Observer Clocks Panel */
+    header {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .panel-toggle-btn {
+      pointer-events: auto !important;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+
+    .panel-toggle-btn:hover {
+      color: #ffffff;
+      border-color: #60a5fa;
+    }
+
+    .clocks-panel {
+      width: fit-content;
+      padding: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: top left;
+      position: relative;
+    }
+
+    .clocks-panel.hidden {
+      opacity: 0;
+      transform: scale(0.9) translateY(-10px);
+      pointer-events: none !important;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .settings-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .settings-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Size Settings Pop-up Card */
+    .settings-popup {
+      position: absolute;
+      top: 40px;
+      right: 12px;
+      z-index: 20;
+      width: 220px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .settings-popup.hidden {
+      display: none;
+    }
+
+    .popup-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .popup-close {
+      cursor: pointer;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .popup-close:hover { color: #ffffff; }
+
+    .clocks-grid {
+      display: flex;
+      gap: 10px;
+    }
+
+    .observer-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(2, 6, 23, 0.6);
+      padding: 8px;
+      border-radius: 10px;
+      width: 125px; /* Slightly enlarged for stability */
+      position: relative;
+    }
+
+    .card-a { border: 1px solid rgba(239, 68, 68, 0.4); }
+    .card-b { border: 1px solid rgba(59, 130, 246, 0.4); }
+
+    .card-a.active-moving { border: 2px solid #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+    .card-b.active-moving { border: 2px solid #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5); }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+
+    .name-a { font-size: 10px; font-weight: 800; color: #f87171; white-space: nowrap; }
+    .name-b { font-size: 10px; font-weight: 800; color: #60a5fa; white-space: nowrap; }
+
+    /* Fixed bounding box for numerical time display */
+    .time-display {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+      min-width: 38px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      display: inline-block;
+    }
+
+    .clock-svg { width: 70px; height: 70px; margin: 2px 0; }
+
+    .move-btn {
+      margin-top: 4px;
+      width: 100%;
+      padding: 3px 0;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+
+    .move-btn-a { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .move-btn-a:hover, .move-btn-a.active { background: #dc2626; color: #ffffff; }
+
+    .move-btn-b { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .move-btn-b:hover, .move-btn-b.active { background: #2563eb; color: #ffffff; }
+
+    .card-footer {
+      width: 100%;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .status-text { font-size: 9px; font-weight: 700; color: #fbbf24; }
+
+    /* Bottom Dashboard Panel */
+    footer {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .controls-panel {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      font-weight: 600;
+      color: #94a3b8;
+      padding: 0 2px;
+      margin-bottom: 2px;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type=range]:focus { outline: none; }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: rgba(30, 41, 59, 0.9);
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #3B82F6;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -4px;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+      border: 2px solid #FFFFFF;
+    }
+
+    .action-row { display: flex; gap: 8px; }
+
+    .play-btn {
+      flex: 1;
+      padding: 6px;
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 800;
+      border-radius: 6px;
+      border: none;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .reset-btn {
+      padding: 6px 12px;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      font-size: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- THREE.JS CANVAS CONTAINER -->
+  <div id="canvas-container"></div>
+
+  <!-- PANEL 1: BOTH OBSERVER CLOCKS (TOP LEFT) -->
+  <header>
+    <button id="toggle-panel-btn" class="panel-toggle-btn">
+      <span id="toggle-icon">👁️</span>
+      <span id="toggle-text">Hide Clocks</span>
+    </button>
+
+    <div id="clocks-panel" class="ui-panel clocks-panel">
+      <!-- Settings Pop-up Card -->
+      <div id="settings-popup" class="settings-popup hidden">
+        <div class="popup-title">
+          <span>Avatar Scale</span>
+          <span id="popup-close" class="popup-close">✕</span>
+        </div>
+        <div class="control-row">
+          <span>Scale</span>
+          <span id="size-val">1.0x</span>
+        </div>
+        <input id="avatar-size-slider" type="range" min="0.4" max="3.0" value="1.0" step="0.1">
+      </div>
+
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>🌍</span>
+          <span>Observer Clocks</span>
+        </div>
+        <div class="header-actions">
+          <button id="settings-btn" class="settings-btn" title="Avatar Settings">⚙️</button>
+        </div>
+      </div>
+
+      <div class="clocks-grid">
+        <!-- PERSON A -->
+        <div id="card-p1" class="observer-card card-a">
+          <div class="card-header">
+            <span class="name-a">🔴 Person A</span>
+            <span id="p1-digital-time" class="time-display">00:00</span>
+          </div>
+
+          <svg class="clock-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="#0B0F19" stroke="#EF4444" stroke-width="2.5"/>
+            <g stroke="#64748B" stroke-width="1.5">
+              <line x1="50" y1="10" x2="50" y2="15" />
+              <line x1="70" y1="15.3" x2="67.5" y2="19.6" />
+              <line x1="84.7" y1="30" x2="80.4" y2="32.5" />
+              <line x1="90" y1="50" x2="85" y2="50" />
+              <line x1="84.7" y1="70" x2="80.4" y2="67.5" />
+              <line x1="70" y1="84.7" x2="67.5" y2="80.4" />
+              <line x1="50" y1="90" x2="50" y2="85" />
+              <line x1="30" y1="84.7" x2="32.5" y2="80.4" />
+              <line x1="15.3" y1="70" x2="19.6" y2="67.5" />
+              <line x1="10" y1="50" x2="15" y2="50" />
+              <line x1="15.3" y1="30" x2="19.6" y2="32.5" />
+              <line x1="30" y1="15.3" x2="32.5" y2="19.6" />
+            </g>
+            <line id="p1-hour-hand" x1="50" y1="50" x2="50" y2="28" stroke="#EF4444" stroke-width="3.5" stroke-linecap="round"/>
+            <line id="p1-minute-hand" x1="50" y1="50" x2="50" y2="18" stroke="#F8FAFC" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
+          </svg>
+
+          <button id="btn-move-p1" class="move-btn move-btn-a">Move</button>
+
+          <div class="card-footer">
+            <div id="p1-status" class="status-text">--</div>
+          </div>
+        </div>
+
+        <!-- PERSON B -->
+        <div id="card-p2" class="observer-card card-b">
+          <div class="card-header">
+            <span class="name-b">🔵 Person B</span>
+            <span id="p2-digital-time" class="time-display">00:00</span>
+          </div>
+
+          <svg class="clock-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="#0B0F19" stroke="#3B82F6" stroke-width="2.5"/>
+            <g stroke="#64748B" stroke-width="1.5">
+              <line x1="50" y1="10" x2="50" y2="15" />
+              <line x1="70" y1="15.3" x2="67.5" y2="19.6" />
+              <line x1="84.7" y1="30" x2="80.4" y2="32.5" />
+              <line x1="90" y1="50" x2="85" y2="50" />
+              <line x1="84.7" y1="70" x2="80.4" y2="67.5" />
+              <line x1="70" y1="84.7" x2="67.5" y2="80.4" />
+              <line x1="50" y1="90" x2="50" y2="85" />
+              <line x1="30" y1="84.7" x2="32.5" y2="80.4" />
+              <line x1="15.3" y1="70" x2="19.6" y2="67.5" />
+              <line x1="10" y1="50" x2="15" y2="50" />
+              <line x1="15.3" y1="30" x2="19.6" y2="32.5" />
+              <line x1="30" y1="15.3" x2="32.5" y2="19.6" />
+            </g>
+            <line id="p2-hour-hand" x1="50" y1="50" x2="50" y2="28" stroke="#3B82F6" stroke-width="3.5" stroke-linecap="round"/>
+            <line id="p2-minute-hand" x1="50" y1="50" x2="50" y2="18" stroke="#F8FAFC" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
+          </svg>
+
+          <button id="btn-move-p2" class="move-btn move-btn-b">Move</button>
+
+          <div class="card-footer">
+            <div id="p2-status" class="status-text">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PANEL 2: CONTROL DASHBOARD WITH SLIDER (BOTTOM CENTER) -->
+  <footer>
+    <div class="ui-panel controls-panel">
+      <div>
+        <div class="slider-labels">
+          <span>00:00</span>
+          <span>06:00</span>
+          <span>12:00</span>
+          <span>18:00</span>
+          <span>24:00</span>
+        </div>
+        <input id="time-slider" type="range" min="0" max="1439" value="0" step="1">
+      </div>
+
+      <div class="action-row">
+        <button id="play-btn" class="play-btn">
+          <span id="play-icon">▶</span>
+          <span id="play-text">Auto Play</span>
+        </button>
+        <button id="reset-btn" class="reset-btn">Reset View</button>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // System setup
+    const container = document.getElementById('canvas-container');
+    
+    // Scene setup
+    const scene = new THREE.Scene();
+    
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 0, 12);
+
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 6.2;
+    controls.maxDistance = 100;
+
+    // Solar Lighting Setup - Soft Ambient, Strong Directional Light for Clear Night/Day Shading
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.03);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    sunLight.position.set(200, 0, 0);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 500;
+    scene.add(sunLight);
+
+    // Sun Visual mesh
+    const sunGeo = new THREE.SphereGeometry(8, 32, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
+    const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+    sunMesh.position.set(200, 0, 0);
+    scene.add(sunMesh);
+
+    // Earth Setup
+    const earthRadius = 5;
+    const earthGroup = new THREE.Group();
+    scene.add(earthGroup);
+
+    const textureLoader = new THREE.TextureLoader();
+    
+    const dayTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg');
+    const specularTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg');
+    const normalTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg');
+
+    const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
+    const earthMat = new THREE.MeshStandardMaterial({
+      map: dayTexture,
+      normalMap: normalTexture,
+      normalScale: new THREE.Vector2(0.85, 0.85),
+      roughnessMap: specularTexture,
+      roughness: 0.7,
+      metalness: 0.1
+    });
+    
+    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    earthMesh.receiveShadow = true;
+    earthMesh.castShadow = true;
+    earthGroup.add(earthMesh);
+
+    // State Variables
+    let selectedPersonIndex = null;
+    let avatarScale = 1.0;
+    let isPlaying = false;
+    let timeInMinutes = 0;
+
+    // Peg Person Creation Helper - Standard Material reacts naturally to Sunlight shading
+    function createPegPerson(colorHex) {
+      const group = new THREE.Group();
+
+      const baseGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.06, 16);
+      const bodyGeo = new THREE.ConeGeometry(0.16, 0.6, 16);
+      const headGeo = new THREE.SphereGeometry(0.14, 16, 16);
+
+      const mat = new THREE.MeshStandardMaterial({
+        color: colorHex,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+
+      const base = new THREE.Mesh(baseGeo, mat);
+      base.position.y = 0.03;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      group.add(base);
+
+      const body = new THREE.Mesh(bodyGeo, mat);
+      body.position.y = 0.33;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      const head = new THREE.Mesh(headGeo, mat);
+      head.position.y = 0.72;
+      head.castShadow = true;
+      head.receiveShadow = true;
+      group.add(head);
+
+      return group;
+    }
+
+    const person1 = { lat: 40.7, lon: -74.0, prefix: 'p1', color: 0xef4444, mesh: createPegPerson(0xef4444) };
+    const person2 = { lat: 51.5, lon: -0.1, prefix: 'p2', color: 0x3b82f6, mesh: createPegPerson(0x3b82f6) };
+
+    person1.mesh.userData = { isAvatar: true, index: 1 };
+    person2.mesh.userData = { isAvatar: true, index: 2 };
+
+    earthGroup.add(person1.mesh);
+    earthGroup.add(person2.mesh);
+
+    // Update Avatar Position & Alignment on Globe
+    function updateAvatarPosition(person) {
+      const latRad = person.lat * (Math.PI / 180);
+      const lonRad = -person.lon * (Math.PI / 180);
+
+      const x = earthRadius * Math.cos(latRad) * Math.cos(lonRad);
+      const y = earthRadius * Math.sin(latRad);
+      const z = earthRadius * Math.cos(latRad) * Math.sin(lonRad);
+
+      person.mesh.position.set(x, y, z);
+      person.mesh.scale.set(avatarScale, avatarScale, avatarScale);
+
+      const normal = new THREE.Vector3(x, y, z).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      const quaternion = new THREE.Quaternion().setFromUnitVectors(up, normal);
+      person.mesh.quaternion.copy(quaternion);
+    }
+
+    // Raycasting for Precise Clicking & Dragging
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function setMoveState(personIndex) {
+      if (selectedPersonIndex === personIndex) {
+        selectedPersonIndex = null;
+      } else {
+        selectedPersonIndex = personIndex;
+      }
+      updateUISelectionState();
+    }
+
+    function updateUISelectionState() {
+      const cardA = document.getElementById('card-p1');
+      const cardB = document.getElementById('card-p2');
+      const btnA = document.getElementById('btn-move-p1');
+      const btnB = document.getElementById('btn-move-p2');
+
+      cardA.classList.remove('active-moving');
+      cardB.classList.remove('active-moving');
+      btnA.classList.remove('active');
+      btnB.classList.remove('active');
+
+      if (selectedPersonIndex === 1) {
+        cardA.classList.add('active-moving');
+        btnA.classList.add('active');
+      } else if (selectedPersonIndex === 2) {
+        cardB.classList.add('active-moving');
+        btnB.classList.add('active');
+      }
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.ui-panel') || e.target.closest('.panel-toggle-btn')) return;
+
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      // Check click on avatars first
+      const avatarIntersects = raycaster.intersectObjects([person1.mesh, person2.mesh], true);
+      if (avatarIntersects.length > 0) {
+        let obj = avatarIntersects[0].object;
+        while (obj.parent && !obj.userData.isAvatar) {
+          obj = obj.parent;
+        }
+        if (obj.userData && obj.userData.isAvatar) {
+          setMoveState(obj.userData.index);
+          return;
+        }
+      }
+
+      // Check click on Earth surface ONLY if an avatar is active for moving
+      if (selectedPersonIndex !== null) {
+        const earthIntersects = raycaster.intersectObject(earthMesh);
+        if (earthIntersects.length > 0) {
+          const point = earthIntersects[0].point;
+          const localPoint = earthGroup.worldToLocal(point.clone());
+
+          const r = localPoint.length();
+          const lat = Math.asin(localPoint.y / r) * (180 / Math.PI);
+          const lon = -Math.atan2(localPoint.z, localPoint.x) * (180 / Math.PI);
+
+          const target = selectedPersonIndex === 1 ? person1 : person2;
+          target.lat = lat;
+          target.lon = lon;
+
+          updateAvatarPosition(target);
+          updateSimulation(timeInMinutes);
+          
+          selectedPersonIndex = null;
+          updateUISelectionState();
+        }
+      }
+    });
+
+    // Panel Toggle Handler
+    const togglePanelBtn = document.getElementById('toggle-panel-btn');
+    const clocksPanel = document.getElementById('clocks-panel');
+    const toggleIcon = document.getElementById('toggle-icon');
+    const toggleText = document.getElementById('toggle-text');
+
+    togglePanelBtn.addEventListener('click', () => {
+      const isHidden = clocksPanel.classList.toggle('hidden');
+      toggleIcon.textContent = isHidden ? '👁️' : '🙈';
+      toggleText.textContent = isHidden ? 'Show Clocks' : 'Hide Clocks';
+    });
+
+    // Move buttons in Clock panel
+    document.getElementById('btn-move-p1').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMoveState(1);
+    });
+
+    document.getElementById('btn-move-p2').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMoveState(2);
+    });
+
+    // Settings Pop-up Toggle
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPopup = document.getElementById('settings-popup');
+    const popupClose = document.getElementById('popup-close');
+
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsPopup.classList.toggle('hidden');
+    });
+
+    popupClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsPopup.classList.add('hidden');
+    });
+
+    // Avatar Size Slider Handler
+    const avatarSizeSlider = document.getElementById('avatar-size-slider');
+    const sizeValDisplay = document.getElementById('size-val');
+
+    avatarSizeSlider.addEventListener('input', (e) => {
+      avatarScale = parseFloat(e.target.value);
+      sizeValDisplay.textContent = `${avatarScale.toFixed(1)}x`;
+      updateAvatarPosition(person1);
+      updateAvatarPosition(person2);
+    });
+
+    // Auto Play & Reset
+    const playBtn = document.getElementById('play-btn');
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isPlaying = !isPlaying;
+      document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
+      document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Auto Play';
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      camera.position.set(0, 0, 12);
+      controls.reset();
+    });
+
+    const timeSlider = document.getElementById('time-slider');
+    timeSlider.addEventListener('input', (e) => {
+      if (isPlaying) {
+        isPlaying = false;
+        document.getElementById('play-icon').textContent = '▶';
+        document.getElementById('play-text').textContent = 'Auto Play';
+      }
+      updateSimulation(parseFloat(e.target.value));
+    });
+
+    // Clock Logic & Celestial Updates
+    function updateSimulation(minutes) {
+      timeInMinutes = minutes;
+
+      const rotationAngle = (minutes / 1440) * Math.PI * 2;
+      earthGroup.rotation.y = rotationAngle;
+
+      updatePersonClock(person1, minutes);
+      updatePersonClock(person2, minutes);
+    }
+
+    function updatePersonClock(person, baseMinutes) {
+      const offsetMinutes = (person.lon / 360) * 1440;
+      let localMinutes = (baseMinutes + offsetMinutes) % 1440;
+      if (localMinutes < 0) localMinutes += 1440;
+
+      const localHours = Math.floor(localMinutes / 60);
+      const localMins = Math.floor(localMinutes % 60);
+
+      document.getElementById(`${person.prefix}-digital-time`).textContent = `${String(localHours).padStart(2, '0')}:${String(localMins).padStart(2, '0')}`;
+
+      const hourHandAngle = ((localHours % 12) + localMins / 60) * 30;
+      const minuteHandAngle = localMins * 6;
+
+      document.getElementById(`${person.prefix}-hour-hand`).setAttribute('transform', `rotate(${hourHandAngle} 50 50)`);
+      document.getElementById(`${person.prefix}-minute-hand`).setAttribute('transform', `rotate(${minuteHandAngle} 50 50)`);
+
+      const isDay = localHours >= 6 && localHours < 18;
+      document.getElementById(`${person.prefix}-status`).textContent = isDay ? '☀️ Day' : '🌙 Night';
+    }
+
+    // Animation Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (isPlaying) {
+        timeInMinutes = (timeInMinutes + 1.5) % 1440;
+        timeSlider.value = timeInMinutes;
+        updateSimulation(timeInMinutes);
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Startup Initialization
+    updateAvatarPosition(person1);
+    updateAvatarPosition(person2);
+
+    const now = new Date();
+    const currentMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+    timeSlider.value = currentMins;
+    updateSimulation(currentMins);
+
+    animate();
+  </script>
+</body>
+</html>
