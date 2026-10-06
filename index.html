@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Globe & Dual Observer Clocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>3D Globe, Dual Observer Clocks & Seasonal Orbit</title>
 
   <!-- Three.js and OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -22,20 +22,25 @@
       background-color: #030712;
       color: #F8FAFC;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     #canvas-container {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
       position: absolute;
       top: 0;
       left: 0;
       z-index: 0;
+      touch-action: none;
     }
 
     .ui-panel {
@@ -48,7 +53,7 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
     }
 
-    /* Top Left Observer Clocks Panel */
+    /* Top Left Observer Panel */
     header {
       position: absolute;
       top: 12px;
@@ -104,6 +109,7 @@
       border-bottom: 1px solid #1e293b;
       padding-bottom: 6px;
       margin-bottom: 10px;
+      gap: 12px;
     }
 
     .panel-title {
@@ -112,6 +118,33 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* Mode Switcher Tabs */
+    .mode-switcher {
+      display: flex;
+      background: rgba(2, 6, 23, 0.8);
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+    }
+
+    .mode-tab {
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-tab.active {
+      background: #3b82f6;
+      color: #ffffff;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
     }
 
     .header-actions {
@@ -187,7 +220,7 @@
       background: rgba(2, 6, 23, 0.6);
       padding: 8px;
       border-radius: 10px;
-      width: 125px;
+      width: 135px;
       position: relative;
     }
 
@@ -222,6 +255,25 @@
     }
 
     .clock-svg { width: 70px; height: 70px; margin: 2px 0; }
+
+    /* Calendar Visual Badge */
+    .calendar-badge {
+      width: 70px;
+      height: 70px;
+      margin: 2px 0;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #38bdf8;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    .calendar-season-icon { font-size: 22px; line-height: 1; }
+    .calendar-season-name { font-size: 10px; font-weight: 900; color: #38bdf8; margin-top: 2px; }
 
     .move-btn {
       margin-top: 4px;
@@ -258,8 +310,8 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
-      width: 90%;
-      max-width: 380px;
+      width: 92%;
+      max-width: 480px;
       pointer-events: none;
     }
 
@@ -280,6 +332,20 @@
       margin-bottom: 2px;
     }
 
+    .month-notches-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 7px;
+      font-weight: 700;
+      color: #38bdf8;
+      padding: 0 4px;
+    }
+
+    .slider-container {
+      position: relative;
+      width: 100%;
+    }
+
     .control-row {
       display: flex;
       justify-content: space-between;
@@ -295,6 +361,8 @@
       width: 100%;
       background: transparent;
       cursor: pointer;
+      position: relative;
+      z-index: 2;
     }
 
     input[type=range]:focus { outline: none; }
@@ -320,33 +388,226 @@
       border: 2px solid #FFFFFF;
     }
 
-    .action-row { display: flex; gap: 8px; }
+    .slider-with-play {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .centerstage-switcher {
+      display: flex;
+      background: rgba(2, 6, 23, 0.8);
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+    }
+
+    .centerstage-btn {
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+
+    .centerstage-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 0 8px rgba(2, 132, 199, 0.6);
+    }
 
     .play-btn {
-      flex: 1;
-      padding: 6px;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      padding: 0;
       background: #2563eb;
       color: #ffffff;
       font-weight: 800;
-      border-radius: 6px;
+      border-radius: 50%;
       border: none;
-      font-size: 10px;
+      font-size: 11px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+      transition: background 0.15s;
+    }
+    .play-btn:hover { background: #3b82f6; }
+
+    .mode-hidden { display: none !important; }
+
+    /* ========== Mobile-first responsive ========== */
+    header {
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+      right: max(8px, env(safe-area-inset-right));
+      max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
     }
 
-    .reset-btn {
-      padding: 6px 12px;
-      background: #1e293b;
-      color: #cbd5e1;
-      font-weight: 700;
-      border-radius: 6px;
-      border: 1px solid #334155;
+    .clocks-panel {
+      padding: 8px;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .panel-header {
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+    }
+
+    .panel-title {
+      font-size: 11px;
+    }
+
+    .mode-tab, .centerstage-btn {
+      padding: 5px 7px;
+      font-size: 9px;
+      min-height: 28px;
+    }
+
+    .clocks-grid {
+      gap: 6px;
+      width: 100%;
+    }
+
+    .observer-card {
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
+      padding: 6px;
+    }
+
+    .name-a, .name-b { font-size: 9px; }
+    .time-display { font-size: 10px; min-width: 32px; }
+
+    .clock-svg, .calendar-badge {
+      width: 56px;
+      height: 56px;
+    }
+
+    .calendar-season-icon { font-size: 18px; }
+    .calendar-season-name { font-size: 9px; }
+
+    .move-btn {
+      padding: 6px 0;
+      font-size: 8px;
+      letter-spacing: 0.02em;
+      min-height: 28px;
+    }
+
+    .status-text { font-size: 8px; }
+
+    .settings-popup {
+      width: min(200px, calc(100vw - 40px));
+      right: 4px;
+      top: 36px;
+    }
+
+    footer {
+      bottom: max(8px, env(safe-area-inset-bottom));
+      width: calc(100% - 16px);
+      max-width: 480px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .controls-panel {
+      padding: 8px 10px;
+      gap: 6px;
+    }
+
+    .slider-labels { font-size: 7px; }
+    .month-notches-labels { font-size: 6px; padding: 0 2px; }
+    .control-row { font-size: 8px; }
+
+    input[type=range]::-webkit-slider-runnable-track { height: 8px; }
+    input[type=range]::-webkit-slider-thumb {
+      height: 18px;
+      width: 18px;
+      margin-top: -5px;
+    }
+    /* Firefox */
+    input[type=range]::-moz-range-track {
+      height: 8px;
+      background: rgba(30, 41, 59, 0.9);
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    input[type=range]::-moz-range-thumb {
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #3B82F6;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+    }
+
+    .play-btn {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
+    .panel-toggle-btn {
+      padding: 6px 10px;
       font-size: 10px;
-      cursor: pointer;
+      min-height: 32px;
+    }
+
+    /* Slightly roomier on tablets / desktop */
+    @media (min-width: 480px) {
+      header {
+        top: 12px;
+        left: 12px;
+        max-width: none;
+      }
+      .clocks-panel {
+        padding: 12px;
+        width: fit-content;
+      }
+      .observer-card {
+        flex: none;
+        width: 135px;
+        padding: 8px;
+      }
+      .clock-svg, .calendar-badge {
+        width: 70px;
+        height: 70px;
+      }
+      .calendar-season-icon { font-size: 22px; }
+      .calendar-season-name { font-size: 10px; }
+      .name-a, .name-b { font-size: 10px; }
+      .time-display { font-size: 11px; }
+      .move-btn { font-size: 9px; padding: 3px 0; min-height: auto; }
+      .mode-tab, .centerstage-btn {
+        padding: 3px 8px;
+        font-size: 10px;
+        min-height: auto;
+      }
+      .controls-panel { padding: 10px 14px; gap: 8px; }
+      footer { bottom: 12px; width: 92%; }
+      .play-btn { width: 28px; height: 28px; font-size: 11px; }
+    }
+
+    /* Very narrow phones: stack header controls tighter */
+    @media (max-width: 360px) {
+      .panel-title span:last-child { display: none; } /* hide "Clock"/"Calendar" text, keep icon */
+      .centerstage-btn { padding: 5px 5px; font-size: 8px; }
+      .mode-tab { padding: 5px 5px; font-size: 8px; }
+      .clock-svg, .calendar-badge { width: 48px; height: 48px; }
     }
   </style>
 </head>
@@ -355,11 +616,11 @@
   <!-- THREE.JS CANVAS CONTAINER -->
   <div id="canvas-container"></div>
 
-  <!-- PANEL 1: BOTH OBSERVER CLOCKS (TOP LEFT) -->
+  <!-- PANEL 1: OBSERVER CLOCKS & CALENDAR (TOP LEFT) -->
   <header>
     <button id="toggle-panel-btn" class="panel-toggle-btn">
       <span id="toggle-icon">👁️</span>
-      <span id="toggle-text">Hide Clocks</span>
+      <span id="toggle-text">Hide Panel</span>
     </button>
 
     <div id="clocks-panel" class="ui-panel clocks-panel">
@@ -378,9 +639,20 @@
 
       <div class="panel-header">
         <div class="panel-title">
-          <span>🌍</span>
-          <span>Observer Clocks</span>
+          <span id="header-mode-icon">🌍</span>
+          <span id="header-mode-title">Clock</span>
         </div>
+
+        <div class="mode-switcher">
+          <button id="tab-clock" class="mode-tab active">Clock</button>
+          <button id="tab-calendar" class="mode-tab">Calendar</button>
+        </div>
+
+        <div id="centerstage-row" class="centerstage-switcher">
+          <button id="focus-earth" class="centerstage-btn active">🌍 Earth</button>
+          <button id="focus-sun" class="centerstage-btn">☀️ Sun</button>
+        </div>
+
         <div class="header-actions">
           <button id="settings-btn" class="settings-btn" title="Avatar Settings">⚙️</button>
         </div>
@@ -392,9 +664,11 @@
           <div class="card-header">
             <span class="name-a">🔴 Person A</span>
             <span id="p1-digital-time" class="time-display">00:00</span>
+            <span id="p1-date-display" class="time-display mode-hidden">Mar 21</span>
           </div>
 
-          <svg class="clock-svg" viewBox="0 0 100 100">
+          <!-- CLOCK DISPLAY -->
+          <svg id="p1-clock-svg" class="clock-svg" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="#0B0F19" stroke="#EF4444" stroke-width="2.5"/>
             <g stroke="#64748B" stroke-width="1.5">
               <line x1="50" y1="10" x2="50" y2="15" />
@@ -415,7 +689,13 @@
             <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
           </svg>
 
-          <button id="btn-move-p1" class="move-btn move-btn-a">Move</button>
+          <!-- CALENDAR DISPLAY -->
+          <div id="p1-calendar-badge" class="calendar-badge mode-hidden">
+            <span id="p1-season-icon" class="calendar-season-icon">🌱</span>
+            <span id="p1-season-name" class="calendar-season-name">Spring</span>
+          </div>
+
+          <button id="btn-move-p1" class="move-btn move-btn-a">MOVE PERSON</button>
 
           <div class="card-footer">
             <div id="p1-status" class="status-text">--</div>
@@ -427,9 +707,11 @@
           <div class="card-header">
             <span class="name-b">🔵 Person B</span>
             <span id="p2-digital-time" class="time-display">00:00</span>
+            <span id="p2-date-display" class="time-display mode-hidden">Mar 21</span>
           </div>
 
-          <svg class="clock-svg" viewBox="0 0 100 100">
+          <!-- CLOCK DISPLAY -->
+          <svg id="p2-clock-svg" class="clock-svg" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="#0B0F19" stroke="#3B82F6" stroke-width="2.5"/>
             <g stroke="#64748B" stroke-width="1.5">
               <line x1="50" y1="10" x2="50" y2="15" />
@@ -450,7 +732,13 @@
             <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
           </svg>
 
-          <button id="btn-move-p2" class="move-btn move-btn-b">Move</button>
+          <!-- CALENDAR DISPLAY -->
+          <div id="p2-calendar-badge" class="calendar-badge mode-hidden">
+            <span id="p2-season-icon" class="calendar-season-icon">🍂</span>
+            <span id="p2-season-name" class="calendar-season-name">Autumn</span>
+          </div>
+
+          <button id="btn-move-p2" class="move-btn move-btn-b">MOVE PERSON</button>
 
           <div class="card-footer">
             <div id="p2-status" class="status-text">--</div>
@@ -463,23 +751,56 @@
   <!-- PANEL 2: CONTROL DASHBOARD WITH SLIDER (BOTTOM CENTER) -->
   <footer>
     <div class="ui-panel controls-panel">
-      <div>
-        <div class="slider-labels">
-          <span>00:00 UTC</span>
-          <span>06:00</span>
-          <span>12:00</span>
-          <span>18:00</span>
-          <span>24:00</span>
-        </div>
-        <input id="time-slider" type="range" min="0" max="1439" value="0" step="1">
+      <!-- CLOCK SLIDER LABELS -->
+      <div id="clock-labels" class="slider-labels">
+        <span>00:00 UTC</span>
+        <span>06:00</span>
+        <span>12:00</span>
+        <span>18:00</span>
+        <span>24:00</span>
       </div>
 
-      <div class="action-row">
-        <button id="play-btn" class="play-btn">
+      <!-- CALENDAR MONTH NOTCHES -->
+      <div id="calendar-labels" class="month-notches-labels mode-hidden">
+        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+      </div>
+
+      <div class="slider-with-play">
+        <button id="play-btn" class="play-btn" title="Play / Pause">
           <span id="play-icon">▶</span>
-          <span id="play-text">Auto Play</span>
         </button>
-        <button id="reset-btn" class="reset-btn">Reset View</button>
+        <div class="slider-container" style="flex:1;">
+          <input id="time-slider" type="range" min="0" max="1439" value="0" step="1" list="month-ticks">
+          <datalist id="month-ticks">
+            <option value="1"></option>
+            <option value="32"></option>
+            <option value="60"></option>
+            <option value="91"></option>
+            <option value="121"></option>
+            <option value="152"></option>
+            <option value="182"></option>
+            <option value="213"></option>
+            <option value="244"></option>
+            <option value="274"></option>
+            <option value="305"></option>
+            <option value="335"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <!-- Play Speed Slider -->
+      <div class="control-row" style="margin-top: 4px;">
+        <span>Play Speed</span>
+        <span id="speed-val">1.0x</span>
+      </div>
+      <div class="slider-container">
+        <input id="speed-slider" type="range" min="0.1" max="20" value="1.0" step="0.1">
+      </div>
+      <div class="slider-labels" style="font-size: 7px; margin-top: -2px;">
+        <span>Slow</span>
+        <span>Cal: 1 day ≈10s @0.1×</span>
+        <span>Fast</span>
       </div>
     </div>
   </footer>
@@ -508,41 +829,94 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 6.2;
-    controls.maxDistance = 100;
+    controls.maxDistance = 300;
 
-    // Solar Lighting Setup - Sun fixed along +X axis
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.05);
+    // Solar Lighting Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.08);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    const sunDist = 200;
-    sunLight.position.set(sunDist, 0, 0);
+    const sunLight = new THREE.PointLight(0xfff0c0, 3.4, 800);
+    sunLight.position.set(0, 0, 0);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
     sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.far = 800;
     scene.add(sunLight);
 
-    // Sun Visual mesh
-    const sunGeo = new THREE.SphereGeometry(8, 32, 32);
+    // Central Sun Mesh + multi-layer glow
+    const sunGeo = new THREE.SphereGeometry(3.5, 32, 32);
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-    sunMesh.position.set(sunDist, 0, 0);
     scene.add(sunMesh);
 
-    // Earth Setup
-    const earthRadius = 5;
-    const earthGroup = new THREE.Group();
-    scene.add(earthGroup);
+    // Soft outer glow layers (additive-style via transparency)
+    const glowLayers = [
+      { scale: 1.35, color: 0xffcc44, opacity: 0.45 },
+      { scale: 1.9,  color: 0xffaa22, opacity: 0.22 },
+      { scale: 2.6,  color: 0xff8800, opacity: 0.10 }
+    ];
+    glowLayers.forEach(({ scale, color, opacity }) => {
+      const g = new THREE.Mesh(
+        new THREE.SphereGeometry(3.5 * scale, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          side: THREE.FrontSide
+        })
+      );
+      sunMesh.add(g);
+    });
 
+    // Orbit Path Visual Ring (Radius = 25)
+    const orbitRadius = 25;
+    // Match the counter-clockwise Earth orbit (x = cos θ, z = −sin θ)
+    const orbitCurve = new THREE.EllipseCurve(0, 0, orbitRadius, orbitRadius, 0, 2 * Math.PI, false, 0);
+    const points = orbitCurve.getPoints(128);
+    const orbitGeo = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(p.x, 0, -p.y)));
+    const orbitMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, opacity: 0.4, transparent: true });
+    const orbitLine = new THREE.Line(orbitGeo, orbitMat);
+    scene.add(orbitLine);
+
+    // Earth Axial Tilt Hierarchy
+    const earthOrbitGroup = new THREE.Group();
+    scene.add(earthOrbitGroup);
+
+    // Axial tilt — fixed in inertial space, always pointing toward the "pole star".
+    // The tilt angle never changes over the year. Seasons happen only because Earth
+    // moves around the Sun: at northern winter solstice the fixed north end of the
+    // axis is oriented away from the Sun; at northern summer solstice it is toward
+    // the Sun; at equinoxes it is sideways to the Sun.
+    const EARTH_TILT_RAD = 23.44 * (Math.PI / 180);
+    const WINTER_SOLSTICE_DAY = 355; // ~Dec 21 — north pole max away from Sun
+    const earthTiltGroup = new THREE.Group();
+    // Tilt once: north (+Y) leans toward +Z in world space and stays there.
+    earthTiltGroup.rotation.set(EARTH_TILT_RAD, 0, 0);
+    earthOrbitGroup.add(earthTiltGroup);
+
+    const earthGroup = new THREE.Group();
+    earthTiltGroup.add(earthGroup);
+
+    const earthRadius = 5;
     const textureLoader = new THREE.TextureLoader();
     
     const dayTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg');
     const specularTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg');
     const normalTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg');
 
-    const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
+    // Improve texture filtering to reduce flickering / shimmering on fast rotation
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+    dayTexture.anisotropy = maxAniso;
+    specularTexture.anisotropy = maxAniso;
+    normalTexture.anisotropy = maxAniso;
+    dayTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    dayTexture.magFilter = THREE.LinearFilter;
+    specularTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    normalTexture.minFilter = THREE.LinearMipmapLinearFilter;
+
+    const earthGeo = new THREE.SphereGeometry(earthRadius, 96, 96);
     const earthMat = new THREE.MeshStandardMaterial({
       map: dayTexture,
       normalMap: normalTexture,
@@ -557,11 +931,34 @@
     earthMesh.castShadow = true;
     earthGroup.add(earthMesh);
 
+    // Thin polar axis indicators (show axial tilt)
+    const axisLen = earthRadius * 1.35;          // extends beyond the surface
+    const axisRadius = 0.035;
+    const axisMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.85 });
+    const axisGeo = new THREE.CylinderGeometry(axisRadius, axisRadius, axisLen * 2, 8);
+    const polarAxis = new THREE.Mesh(axisGeo, axisMat);
+    // Cylinder is already aligned with local Y (rotation axis)
+    earthGroup.add(polarAxis);
+
+    // Small polar caps / markers at the tips for visibility
+    const poleMarkerGeo = new THREE.SphereGeometry(0.12, 12, 12);
+    const northPole = new THREE.Mesh(poleMarkerGeo, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    northPole.position.y = axisLen;
+    earthGroup.add(northPole);
+    const southPole = new THREE.Mesh(poleMarkerGeo, new THREE.MeshBasicMaterial({ color: 0xf472b6 }));
+    southPole.position.y = -axisLen;
+    earthGroup.add(southPole);
+
     // State Variables
+    let currentMode = 'clock';       // 'clock' or 'calendar'
+    let centerStageTarget = 'earth'; // 'earth' or 'sun'
     let selectedPersonIndex = null;
     let avatarScale = 1.0;
     let isPlaying = false;
-    let timeInMinutes = 0;
+    let playSpeed = 1.0;            // Multiplier for auto-play rate (0.1x – 20x)
+    let timeInMinutes = 0;          // Clock Mode (0 - 1439 mins)
+    let dayOfYear = 80;             // Calendar Mode (1 - 365.25 days)
+    let lastRotationY = 0;          // For high-speed motion blur approximation
 
     // Peg Person Creation Helper
     function createPegPerson(colorHex) {
@@ -599,7 +996,7 @@
     }
 
     const person1 = { lat: 40.7, lon: -74.0, prefix: 'p1', color: 0xef4444, mesh: createPegPerson(0xef4444) };
-    const person2 = { lat: 51.5, lon: -0.1, prefix: 'p2', color: 0x3b82f6, mesh: createPegPerson(0x3b82f6) };
+    const person2 = { lat: -33.8, lon: 151.2, prefix: 'p2', color: 0x3b82f6, mesh: createPegPerson(0x3b82f6) };
 
     person1.mesh.userData = { isAvatar: true, index: 1 };
     person2.mesh.userData = { isAvatar: true, index: 2 };
@@ -628,13 +1025,12 @@
     // Raycasting for Precise Clicking & Dragging
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    const orbitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const planeHit = new THREE.Vector3();
+    let isDraggingEarthOrbit = false;
 
     function setMoveState(personIndex) {
-      if (selectedPersonIndex === personIndex) {
-        selectedPersonIndex = null;
-      } else {
-        selectedPersonIndex = personIndex;
-      }
+      selectedPersonIndex = (selectedPersonIndex === personIndex) ? null : personIndex;
       updateUISelectionState();
     }
 
@@ -658,6 +1054,68 @@
       }
     }
 
+    // Track orbit angle while dragging so we accumulate dayOfYear continuously
+    // (avoids atan2 branch-cut jumps and keeps rotation smooth in both modes).
+    let lastOrbitDragAngle = null;
+
+    function setEarthOrbitFromPointer(clientX, clientY) {
+      mouse.x = (clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      // Prefer plane intersection; fall back to projecting Earth's current pos direction
+      let hit = raycaster.ray.intersectPlane(orbitPlane, planeHit);
+      if (!hit) {
+        // Ray parallel to plane — use direction projected onto XZ
+        const dir = raycaster.ray.direction;
+        const origin = raycaster.ray.origin;
+        // Find t where origin.y + t*dir.y ≈ 0
+        if (Math.abs(dir.y) < 1e-6) return;
+        const t = -origin.y / dir.y;
+        if (t < 0) return;
+        planeHit.set(origin.x + t * dir.x, 0, origin.z + t * dir.z);
+      }
+
+      // Match position formula: x = r·cosθ, z = −r·sinθ  →  θ = atan2(−z, x)
+      // Inverse of: θ = ((day - WINTER_SOLSTICE_DAY)/365.25)*2π - π/2
+      //   → day = WINTER_SOLSTICE_DAY + ((θ + π/2)/2π)*365.25
+      const angle = Math.atan2(-planeHit.z, planeHit.x);
+
+      if (lastOrbitDragAngle === null) {
+        // First sample: snap dayOfYear to absolute angle on the ring
+        let newDay = WINTER_SOLSTICE_DAY + ((angle + Math.PI / 2) / (Math.PI * 2)) * 365.25;
+        newDay = ((newDay % 365.25) + 365.25) % 365.25;
+        dayOfYear = newDay;
+      } else {
+        // Subsequent samples: accumulate delta so rotation is continuous
+        let delta = angle - lastOrbitDragAngle;
+        // Unwrap to [-π, π]
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        // Positive delta (CCW) → dayOfYear increases → prograde rotation
+        dayOfYear += (delta / (Math.PI * 2)) * 365.25;
+        dayOfYear = ((dayOfYear % 365.25) + 365.25) % 365.25;
+      }
+      lastOrbitDragAngle = angle;
+
+      // Sync clock time-of-day with fractional day (same source as rotation)
+      timeInMinutes = (((dayOfYear % 1) + 1) % 1) * 1440;
+
+      if (currentMode === 'clock') {
+        timeSlider.value = timeInMinutes;
+      } else {
+        timeSlider.value = dayOfYear;
+      }
+
+      if (isPlaying) {
+        isPlaying = false;
+        document.getElementById('play-icon').textContent = '▶';
+      }
+
+      // Apply orbit position + rotation immediately (identical for clock & calendar)
+      updateSimulation();
+    }
+
     window.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.ui-panel') || e.target.closest('.panel-toggle-btn')) return;
 
@@ -666,7 +1124,6 @@
 
       raycaster.setFromCamera(mouse, camera);
 
-      // Check click on avatars first
       const avatarIntersects = raycaster.intersectObjects([person1.mesh, person2.mesh], true);
       if (avatarIntersects.length > 0) {
         let obj = avatarIntersects[0].object;
@@ -679,7 +1136,6 @@
         }
       }
 
-      // Check click on Earth surface ONLY if an avatar is active for moving
       if (selectedPersonIndex !== null) {
         const earthIntersects = raycaster.intersectObject(earthMesh);
         if (earthIntersects.length > 0) {
@@ -695,13 +1151,60 @@
           target.lon = lon;
 
           updateAvatarPosition(target);
-          
-          // Recalculate local clocks dynamically based on new longitude position
-          updateSimulation(timeInMinutes);
+          updateSimulation();
           
           selectedPersonIndex = null;
           updateUISelectionState();
         }
+        return;
+      }
+
+      // Sun stage: drag Earth along its orbit
+      if (centerStageTarget === 'sun') {
+        const earthHit = raycaster.intersectObject(earthMesh, true);
+        // Also allow grabbing near the orbit ring (project to plane near Earth)
+        let startOrbitDrag = earthHit.length > 0;
+        if (!startOrbitDrag) {
+          if (raycaster.ray.intersectPlane(orbitPlane, planeHit)) {
+            const distFromOrigin = Math.sqrt(planeHit.x * planeHit.x + planeHit.z * planeHit.z);
+            // Grab if click is near the orbital radius
+            if (Math.abs(distFromOrigin - orbitRadius) < earthRadius * 2.5) {
+              startOrbitDrag = true;
+            }
+          }
+        }
+        if (startOrbitDrag) {
+          isDraggingEarthOrbit = true;
+          controls.enabled = false;
+          // Seed angle from Earth's current orbital position so the first
+          // move applies a delta (rotation stays continuous; no snap).
+          lastOrbitDragAngle = Math.atan2(
+            -earthOrbitGroup.position.z,
+            earthOrbitGroup.position.x
+          );
+          setEarthOrbitFromPointer(e.clientX, e.clientY);
+          e.preventDefault();
+        }
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDraggingEarthOrbit) return;
+      setEarthOrbitFromPointer(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (isDraggingEarthOrbit) {
+        isDraggingEarthOrbit = false;
+        lastOrbitDragAngle = null;
+        controls.enabled = true;
+      }
+    });
+    window.addEventListener('pointercancel', () => {
+      if (isDraggingEarthOrbit) {
+        isDraggingEarthOrbit = false;
+        lastOrbitDragAngle = null;
+        controls.enabled = true;
       }
     });
 
@@ -714,8 +1217,117 @@
     togglePanelBtn.addEventListener('click', () => {
       const isHidden = clocksPanel.classList.toggle('hidden');
       toggleIcon.textContent = isHidden ? '👁️' : '🙈';
-      toggleText.textContent = isHidden ? 'Show Clocks' : 'Hide Clocks';
+      toggleText.textContent = isHidden ? 'Show Panel' : 'Hide Panel';
     });
+
+    // Centerstage Target Switcher Handler
+    const focusEarthBtn = document.getElementById('focus-earth');
+    const focusSunBtn = document.getElementById('focus-sun');
+
+    function setCenterStage(target) {
+      centerStageTarget = target;
+      if (target === 'earth') {
+        focusEarthBtn.classList.add('active');
+        focusSunBtn.classList.remove('active');
+      } else {
+        focusSunBtn.classList.add('active');
+        focusEarthBtn.classList.remove('active');
+      }
+      resetCameraView();
+    }
+
+    focusEarthBtn.addEventListener('click', () => setCenterStage('earth'));
+    focusSunBtn.addEventListener('click', () => setCenterStage('sun'));
+
+    // Mode Switcher Handler
+    const tabClock = document.getElementById('tab-clock');
+    const tabCalendar = document.getElementById('tab-calendar');
+    const headerModeIcon = document.getElementById('header-mode-icon');
+    const headerModeTitle = document.getElementById('header-mode-title');
+
+    const clockLabels = document.getElementById('clock-labels');
+    const calendarLabels = document.getElementById('calendar-labels');
+    const timeSlider = document.getElementById('time-slider');
+
+    function setMode(mode) {
+      currentMode = mode;
+      isPlaying = false;
+      document.getElementById('play-icon').textContent = '▶';
+
+      if (mode === 'clock') {
+        tabClock.classList.add('active');
+        tabCalendar.classList.remove('active');
+        headerModeIcon.textContent = '🌍';
+        headerModeTitle.textContent = 'Clock';
+
+        clockLabels.classList.remove('mode-hidden');
+        calendarLabels.classList.add('mode-hidden');
+
+        document.querySelectorAll('.clock-svg').forEach(el => el.classList.remove('mode-hidden'));
+        document.querySelectorAll('.calendar-badge').forEach(el => el.classList.add('mode-hidden'));
+        document.querySelectorAll('.time-display:not([id*="date"])').forEach(el => el.classList.remove('mode-hidden'));
+        document.querySelectorAll('[id*="date-display"]').forEach(el => el.classList.add('mode-hidden'));
+
+        timeSlider.min = 0;
+        timeSlider.max = 1439;
+        timeSlider.step = 1;
+        timeSlider.value = timeInMinutes;
+
+      } else {
+        tabCalendar.classList.add('active');
+        tabClock.classList.remove('active');
+        headerModeIcon.textContent = '📅';
+        headerModeTitle.textContent = 'Calendar';
+
+        calendarLabels.classList.remove('mode-hidden');
+        clockLabels.classList.add('mode-hidden');
+
+        document.querySelectorAll('.clock-svg').forEach(el => el.classList.add('mode-hidden'));
+        document.querySelectorAll('.calendar-badge').forEach(el => el.classList.remove('mode-hidden'));
+        document.querySelectorAll('.time-display:not([id*="date"])').forEach(el => el.classList.add('mode-hidden'));
+        document.querySelectorAll('[id*="date-display"]').forEach(el => el.classList.remove('mode-hidden'));
+
+        timeSlider.min = 1;
+        timeSlider.max = 365.25;
+        timeSlider.step = 0.25;
+        timeSlider.value = dayOfYear;
+      }
+
+      updateSimulation();
+      resetCameraView();
+    }
+
+    function resetCameraView() {
+      // Mobile-first framing: size for the narrower horizontal FOV of portrait screens.
+      // PerspectiveCamera FOV is vertical; on aspect < 1 the limiting dimension is width.
+      const aspect = Math.max(window.innerWidth / window.innerHeight, 0.45);
+      const vFovRad = (camera.fov * Math.PI) / 180;
+      const halfV = Math.tan(vFovRad / 2);
+      // Horizontal half-angle depends on aspect
+      const halfH = halfV * aspect;
+
+      if (centerStageTarget === 'earth') {
+        // Fit full Earth (radius 5) + padding → need ~7 units half-extent visible
+        const halfExtent = earthRadius * 1.35;
+        // Distance from the more restrictive axis (usually horizontal on mobile)
+        const dist = Math.max(halfExtent / halfH, halfExtent / halfV) * 1.05;
+        const earthPos = earthOrbitGroup.position.clone();
+        // Slight elevation for a natural viewing angle
+        camera.position.copy(earthPos).add(new THREE.Vector3(0, dist * 0.12, dist));
+        controls.target.copy(earthPos);
+      } else {
+        // Fit full orbit (radius 25) + padding → need ~28 units half-extent visible
+        const halfExtent = orbitRadius * 1.15;
+        const dist = Math.max(halfExtent / halfH, halfExtent / halfV) * 1.05;
+        // Elevated oblique view so the ring reads clearly
+        camera.position.set(0, dist * 0.35, dist * 0.95);
+        controls.target.set(0, 0, 0);
+      }
+      controls.update();
+    }
+
+    tabClock.addEventListener('click', () => setMode('clock'));
+    tabCalendar.addEventListener('click', () => setMode('calendar'));
 
     // Move buttons in Clock panel
     document.getElementById('btn-move-p1').addEventListener('click', (e) => {
@@ -754,49 +1366,135 @@
       updateAvatarPosition(person2);
     });
 
-    // Auto Play & Reset
+    // Play Speed Slider Handler
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValDisplay = document.getElementById('speed-val');
+
+    speedSlider.addEventListener('input', (e) => {
+      playSpeed = parseFloat(e.target.value);
+      speedValDisplay.textContent = `${playSpeed.toFixed(1)}x`;
+    });
+
+    // Play / Pause control (compact button)
     const playBtn = document.getElementById('play-btn');
     playBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       isPlaying = !isPlaying;
       document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
-      document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Auto Play';
     });
 
-    document.getElementById('reset-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      camera.position.set(0, 0, 12);
-      controls.reset();
-    });
-
-    const timeSlider = document.getElementById('time-slider');
     timeSlider.addEventListener('input', (e) => {
       if (isPlaying) {
         isPlaying = false;
         document.getElementById('play-icon').textContent = '▶';
-        document.getElementById('play-text').textContent = 'Auto Play';
       }
-      updateSimulation(parseFloat(e.target.value));
+
+      if (currentMode === 'clock') {
+        const newMinutes = parseFloat(e.target.value);
+        let delta = newMinutes - timeInMinutes;
+        // Handle wrap-around when dragging past midnight
+        if (delta < -720) delta += 1440;
+        if (delta > 720) delta -= 1440;
+        dayOfYear = ((dayOfYear + delta / 1440) % 365.25 + 365.25) % 365.25;
+        timeInMinutes = newMinutes;
+      } else {
+        dayOfYear = parseFloat(e.target.value);
+      }
+      updateSimulation();
     });
 
-    // Clock Logic & Celestial Updates
-    function updateSimulation(minutes) {
-      timeInMinutes = minutes;
-
-      // Real Solar Rotation Alignment:
-      // At 00:00 UTC (0 min), Prime Meridian (0° lon) points directly AWAY from the Sun (-X direction, angle = Math.PI).
-      // At 12:00 UTC (720 min), Prime Meridian points directly TOWARD the Sun (+X direction, angle = 0).
-      const rotationAngle = Math.PI - (minutes / 1440) * Math.PI * 2;
-      earthGroup.rotation.y = rotationAngle;
-
-      updatePersonClock(person1, minutes);
-      updatePersonClock(person2, minutes);
+    // Helper: Convert Day of Year to Month & Day Name
+    function getFormattedDate(dayNum) {
+      const date = new Date(2026, 0, 1);
+      date.setTime(date.getTime() + (dayNum - 1) * 24 * 60 * 60 * 1000);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    function updatePersonClock(person, baseMinutes) {
-      // Local solar offset based on geographic longitude (15 deg = 1 hr / 60 mins)
+    // Helper: Calculate Hemisphere Season & Day Length Info
+    function getSeasonInfo(lat, dayNum) {
+      const isNorthern = lat >= 0;
+      let seasonName = '';
+      let icon = '';
+
+      // Meteorological seasons (start before solstices/equinoxes):
+      // Spring Mar 1–May 31, Summer Jun 1–Aug 31,
+      // Autumn Sep 1–Nov 30, Winter Dec 1–Feb 28/29
+      const d = ((dayNum - 1) % 365.25 + 365.25) % 365.25 + 1; // normalize to ~1–365
+      if (d >= 60 && d < 152) {
+        // Mar 1 – May 31
+        seasonName = isNorthern ? 'Spring' : 'Autumn';
+        icon = isNorthern ? '🌱' : '🍂';
+      } else if (d >= 152 && d < 244) {
+        // Jun 1 – Aug 31 (summer starts before June solstice)
+        seasonName = isNorthern ? 'Summer' : 'Winter';
+        icon = isNorthern ? '☀️' : '❄️';
+      } else if (d >= 244 && d < 335) {
+        // Sep 1 – Nov 30
+        seasonName = isNorthern ? 'Autumn' : 'Spring';
+        icon = isNorthern ? '🍂' : '🌱';
+      } else {
+        // Dec 1 – Feb 28/29 (winter starts before December solstice)
+        seasonName = isNorthern ? 'Winter' : 'Summer';
+        icon = isNorthern ? '❄️' : '☀️';
+      }
+
+      const declination = -23.44 * Math.cos((2 * Math.PI / 365.25) * (dayNum + 10));
+      const latRad = lat * (Math.PI / 180);
+      const decRad = declination * (Math.PI / 180);
+      
+      let dayHours = 12;
+      const tanVal = -Math.tan(latRad) * Math.tan(decRad);
+      if (tanVal >= 1) {
+        dayHours = 0;
+      } else if (tanVal <= -1) {
+        dayHours = 24;
+      } else {
+        const hourAngle = Math.acos(tanVal);
+        dayHours = (2 * hourAngle * (180 / Math.PI)) / 15;
+      }
+
+      return { seasonName, icon, dayHours: dayHours.toFixed(1) };
+    }
+
+    // Master Simulation Update Logic
+    function updateSimulation() {
+      // 1. Orbital Position Updates
+      // Counter-clockwise orbit when viewed from above the north ecliptic pole (+Y).
+      // dayOfYear is continuous (includes fraction of day) so orbit always
+      // advances in lockstep with rotation in both modes.
+      // Orbit by translation only — never rotate earthOrbitGroup, so the tilted
+      // axis stays fixed in space (always aims at the same "pole star").
+      // At WINTER_SOLSTICE_DAY: orbitAngle = −π/2 → Earth at (0,0,+r) → fixed
+      // north end of the axis is oriented directly away from the Sun.
+      const orbitAngle =
+        ((dayOfYear - WINTER_SOLSTICE_DAY) / 365.25) * Math.PI * 2 - Math.PI / 2;
+      const oldEarthPos = earthOrbitGroup.position.clone();
+
+      earthOrbitGroup.rotation.set(0, 0, 0); // lock: no orbital precession of the axis
+      earthTiltGroup.rotation.set(EARTH_TILT_RAD, 0, 0); // lock: constant pole-star aim
+      earthOrbitGroup.position.x = orbitRadius * Math.cos(orbitAngle);
+      earthOrbitGroup.position.z = -orbitRadius * Math.sin(orbitAngle);
+
+      // Track Camera smoothly if centerstage is focused on Earth
+      if (centerStageTarget === 'earth') {
+        const deltaPos = earthOrbitGroup.position.clone().sub(oldEarthPos);
+        camera.position.add(deltaPos);
+        controls.target.copy(earthOrbitGroup.position);
+      }
+
+      // 2. Earth Daily Axial Rotation — identical in Clock and Calendar
+      // ~1 prograde spin per orbital day. dayOfYear is continuous (includes
+      // fraction), so orbit-drag, play, and sliders all drive the same spin.
+      earthGroup.rotation.y = dayOfYear * Math.PI * 2;
+
+      // Update Individual Person Clocks & Calendars
+      updatePersonCard(person1);
+      updatePersonCard(person2);
+    }
+
+    function updatePersonCard(person) {
       const offsetMinutes = (person.lon / 360) * 1440;
-      let localMinutes = (baseMinutes + offsetMinutes) % 1440;
+      let localMinutes = (timeInMinutes + offsetMinutes) % 1440;
       if (localMinutes < 0) localMinutes += 1440;
 
       const localHours = Math.floor(localMinutes / 60);
@@ -810,15 +1508,28 @@
       document.getElementById(`${person.prefix}-hour-hand`).setAttribute('transform', `rotate(${hourHandAngle} 50 50)`);
       document.getElementById(`${person.prefix}-minute-hand`).setAttribute('transform', `rotate(${minuteHandAngle} 50 50)`);
 
-      // Physical Day/Night Verification using world position dot product against Sun Direction Vector (+X)
-      const worldPos = new THREE.Vector3();
-      person.mesh.getWorldPosition(worldPos);
-      
-      const sunDirection = new THREE.Vector3(1, 0, 0);
-      const dot = worldPos.clone().normalize().dot(sunDirection);
-      const isDay = dot > 0;
+      const dateStr = getFormattedDate(dayOfYear);
+      document.getElementById(`${person.prefix}-date-display`).textContent = dateStr;
 
-      document.getElementById(`${person.prefix}-status`).textContent = isDay ? '☀️ Day' : '🌙 Night';
+      const seasonInfo = getSeasonInfo(person.lat, dayOfYear);
+      document.getElementById(`${person.prefix}-season-icon`).textContent = seasonInfo.icon;
+      document.getElementById(`${person.prefix}-season-name`).textContent = seasonInfo.seasonName;
+
+      if (currentMode === 'clock') {
+        const worldPos = new THREE.Vector3();
+        person.mesh.getWorldPosition(worldPos);
+        
+        const sunWorldPos = sunMesh.position.clone();
+        const toSunDir = sunWorldPos.sub(worldPos).normalize();
+        
+        const avatarNormal = worldPos.clone().sub(earthOrbitGroup.position).normalize();
+        const dot = avatarNormal.dot(toSunDir);
+        const isDay = dot > 0;
+
+        document.getElementById(`${person.prefix}-status`).textContent = isDay ? '☀️ Day' : '🌙 Night';
+      } else {
+        document.getElementById(`${person.prefix}-status`).textContent = `Daylight: ~${seasonInfo.dayHours}h`;
+      }
     }
 
     // Animation Loop
@@ -826,9 +1537,39 @@
       requestAnimationFrame(animate);
 
       if (isPlaying) {
-        timeInMinutes = (timeInMinutes + 1.5) % 1440;
-        timeSlider.value = timeInMinutes;
-        updateSimulation(timeInMinutes);
+        if (currentMode === 'clock') {
+          // Base rate ~2 min/frame → at 1x a day takes ~12 s @60 fps.
+          // At ~6x a day takes ~2 s; at 20x a day takes ~0.6 s.
+          // Advance both clock and continuous day-of-year so Earth travels the orbit
+          // while spinning (visible in Sun stage; ~1° of orbit per simulated day).
+          const deltaMinutes = 2.0 * playSpeed;
+          timeInMinutes = (timeInMinutes + deltaMinutes) % 1440;
+          dayOfYear = (dayOfYear + deltaMinutes / 1440) % 365.25;
+          timeSlider.value = timeInMinutes;
+        } else {
+          // Calendar: base ≈ 1/60 day/frame.
+          // At slowest 0.1× → ~0.00167 day/frame → 1 daily rotation ≈ 10 s @60 fps.
+          // At 1× → ~1 s/day; at 20× → ~0.05 s/day (year ≈ 18 s).
+          dayOfYear = (dayOfYear % 365.25) + (1 / 60) * playSpeed;
+          timeSlider.value = dayOfYear;
+        }
+        updateSimulation();
+      }
+
+      // Soften appearance under extreme rotational speed to reduce perceived flickering
+      const currentRotY = earthGroup.rotation.y;
+      const deltaRot = Math.abs(currentRotY - lastRotationY);
+      // Normalize large wraps (full turns)
+      const normDelta = Math.min(deltaRot, Math.abs(deltaRot - Math.PI * 2));
+      lastRotationY = currentRotY;
+
+      if (normDelta > 0.2 && isPlaying) {
+        // Slightly increase roughness & reduce normal strength so fast spin looks softer / blurred
+        earthMat.roughness = 0.9;
+        earthMat.normalScale.set(0.4, 0.4);
+      } else {
+        earthMat.roughness = 0.7;
+        earthMat.normalScale.set(0.85, 0.85);
       }
 
       controls.update();
@@ -845,11 +1586,7 @@
     updateAvatarPosition(person1);
     updateAvatarPosition(person2);
 
-    const now = new Date();
-    const currentMins = now.getUTCHours() * 60 + now.getUTCMinutes();
-    timeSlider.value = currentMins;
-    updateSimulation(currentMins);
-
+    setMode('clock');
     animate();
   </script>
 </body>
