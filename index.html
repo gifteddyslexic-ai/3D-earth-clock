@@ -175,7 +175,7 @@
       top: 40px;
       right: 12px;
       z-index: 20;
-      width: 220px;
+      width: 240px;
       padding: 12px;
       background: rgba(15, 23, 42, 0.95);
       border: 1px solid rgba(51, 65, 85, 0.9);
@@ -184,6 +184,34 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+
+    .settings-section-label {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .name-editable {
+      cursor: text;
+      border-radius: 4px;
+      padding: 1px 3px;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .name-editable:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .name-editable.editing {
+      background: rgba(15, 23, 42, 0.95);
+      outline: 1px solid #60a5fa;
+      max-width: 100px;
     }
 
     .settings-popup.hidden {
@@ -275,25 +303,42 @@
     .calendar-season-icon { font-size: 22px; line-height: 1; }
     .calendar-season-name { font-size: 10px; font-weight: 900; color: #38bdf8; margin-top: 2px; }
 
-    .move-btn {
-      margin-top: 4px;
+    .person-toggles {
+      display: flex;
+      gap: 4px;
       width: 100%;
-      padding: 3px 0;
+      margin-top: 4px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 5px 2px;
       border-radius: 6px;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
       border: none;
       cursor: pointer;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.02em;
       transition: all 0.2s;
+      min-height: 26px;
     }
 
-    .move-btn-a { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    .move-btn-a:hover, .move-btn-a.active { background: #dc2626; color: #ffffff; }
+    .toggle-btn-a {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .toggle-btn-a:hover { background: rgba(239, 68, 68, 0.3); color: #ffffff; }
+    .toggle-btn-a.active { background: #dc2626; color: #ffffff; border-color: #ef4444; }
 
-    .move-btn-b { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .move-btn-b:hover, .move-btn-b.active { background: #2563eb; color: #ffffff; }
+    .toggle-btn-b {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .toggle-btn-b:hover { background: rgba(59, 130, 246, 0.3); color: #ffffff; }
+    .toggle-btn-b.active { background: #2563eb; color: #ffffff; border-color: #3b82f6; }
 
     .card-footer {
       width: 100%;
@@ -501,11 +546,10 @@
     .calendar-season-icon { font-size: 18px; }
     .calendar-season-name { font-size: 9px; }
 
-    .move-btn {
-      padding: 6px 0;
-      font-size: 8px;
-      letter-spacing: 0.02em;
-      min-height: 28px;
+    .toggle-btn {
+      padding: 5px 2px;
+      font-size: 7px;
+      min-height: 26px;
     }
 
     .status-text { font-size: 8px; }
@@ -591,7 +635,7 @@
       .calendar-season-name { font-size: 10px; }
       .name-a, .name-b { font-size: 10px; }
       .time-display { font-size: 11px; }
-      .move-btn { font-size: 9px; padding: 3px 0; min-height: auto; }
+      .toggle-btn { font-size: 8px; padding: 4px 2px; min-height: auto; }
       .mode-tab, .centerstage-btn {
         padding: 3px 8px;
         font-size: 10px;
@@ -627,11 +671,25 @@
       <!-- Settings Pop-up Card -->
       <div id="settings-popup" class="settings-popup hidden">
         <div class="popup-title">
-          <span>Avatar Scale</span>
+          <span>Avatar Settings</span>
           <span id="popup-close" class="popup-close">✕</span>
         </div>
+
+        <div id="settings-label-p1" class="settings-section-label">Person A</div>
+        <div class="person-toggles">
+          <button id="btn-view-p1" class="toggle-btn toggle-btn-a active" title="Show / hide avatar">👁 View</button>
+          <button id="btn-move-p1" class="toggle-btn toggle-btn-a" title="Enable move mode">Move: Off</button>
+        </div>
+
+        <div id="settings-label-p2" class="settings-section-label">Person B</div>
+        <div class="person-toggles">
+          <button id="btn-view-p2" class="toggle-btn toggle-btn-b active" title="Show / hide avatar">👁 View</button>
+          <button id="btn-move-p2" class="toggle-btn toggle-btn-b" title="Enable move mode">Move: Off</button>
+        </div>
+
+        <div class="settings-section-label">Scale</div>
         <div class="control-row">
-          <span>Scale</span>
+          <span>Size</span>
           <span id="size-val">1.0x</span>
         </div>
         <input id="avatar-size-slider" type="range" min="0.4" max="3.0" value="1.0" step="0.1">
@@ -662,7 +720,7 @@
         <!-- PERSON A -->
         <div id="card-p1" class="observer-card card-a">
           <div class="card-header">
-            <span class="name-a">🔴 Person A</span>
+            <span id="name-label-p1" class="name-a name-editable" title="Double-click to rename">🔴 Person A</span>
             <span id="p1-digital-time" class="time-display">00:00</span>
             <span id="p1-date-display" class="time-display mode-hidden">Mar 21</span>
           </div>
@@ -695,8 +753,6 @@
             <span id="p1-season-name" class="calendar-season-name">Spring</span>
           </div>
 
-          <button id="btn-move-p1" class="move-btn move-btn-a">MOVE PERSON</button>
-
           <div class="card-footer">
             <div id="p1-status" class="status-text">--</div>
           </div>
@@ -705,7 +761,7 @@
         <!-- PERSON B -->
         <div id="card-p2" class="observer-card card-b">
           <div class="card-header">
-            <span class="name-b">🔵 Person B</span>
+            <span id="name-label-p2" class="name-b name-editable" title="Double-click to rename">🔵 Person B</span>
             <span id="p2-digital-time" class="time-display">00:00</span>
             <span id="p2-date-display" class="time-display mode-hidden">Mar 21</span>
           </div>
@@ -737,8 +793,6 @@
             <span id="p2-season-icon" class="calendar-season-icon">🍂</span>
             <span id="p2-season-name" class="calendar-season-name">Autumn</span>
           </div>
-
-          <button id="btn-move-p2" class="move-btn move-btn-b">MOVE PERSON</button>
 
           <div class="card-footer">
             <div id="p2-status" class="status-text">--</div>
@@ -995,8 +1049,8 @@
       return group;
     }
 
-    const person1 = { lat: 40.7, lon: -74.0, prefix: 'p1', color: 0xef4444, mesh: createPegPerson(0xef4444) };
-    const person2 = { lat: -33.8, lon: 151.2, prefix: 'p2', color: 0x3b82f6, mesh: createPegPerson(0x3b82f6) };
+    const person1 = { lat: 40.7, lon: -74.0, prefix: 'p1', color: 0xef4444, mesh: createPegPerson(0xef4444), visible: true, name: 'Person A', emoji: '🔴' };
+    const person2 = { lat: -33.8, lon: 151.2, prefix: 'p2', color: 0x3b82f6, mesh: createPegPerson(0x3b82f6), visible: true, name: 'Person B', emoji: '🔵' };
 
     person1.mesh.userData = { isAvatar: true, index: 1 };
     person2.mesh.userData = { isAvatar: true, index: 2 };
@@ -1044,13 +1098,32 @@
       cardB.classList.remove('active-moving');
       btnA.classList.remove('active');
       btnB.classList.remove('active');
+      btnA.textContent = 'Move: Off';
+      btnB.textContent = 'Move: Off';
 
       if (selectedPersonIndex === 1) {
         cardA.classList.add('active-moving');
         btnA.classList.add('active');
+        btnA.textContent = 'Move: On';
       } else if (selectedPersonIndex === 2) {
         cardB.classList.add('active-moving');
         btnB.classList.add('active');
+        btnB.textContent = 'Move: On';
+      }
+    }
+
+    function setPersonVisible(person, visible) {
+      person.visible = visible;
+      person.mesh.visible = visible;
+      const btn = document.getElementById(`btn-view-${person.prefix}`);
+      if (btn) {
+        btn.classList.toggle('active', visible);
+        btn.textContent = visible ? '👁 View' : '👁 Hide';
+      }
+      // If hiding while in move mode for this person, cancel move
+      if (!visible && selectedPersonIndex === (person.prefix === 'p1' ? 1 : 2)) {
+        selectedPersonIndex = null;
+        updateUISelectionState();
       }
     }
 
@@ -1124,7 +1197,10 @@
 
       raycaster.setFromCamera(mouse, camera);
 
-      const avatarIntersects = raycaster.intersectObjects([person1.mesh, person2.mesh], true);
+      const visibleAvatars = [person1, person2].filter(p => p.visible).map(p => p.mesh);
+      const avatarIntersects = visibleAvatars.length
+        ? raycaster.intersectObjects(visibleAvatars, true)
+        : [];
       if (avatarIntersects.length > 0) {
         let obj = avatarIntersects[0].object;
         while (obj.parent && !obj.userData.isAvatar) {
@@ -1329,15 +1405,83 @@
     tabClock.addEventListener('click', () => setMode('clock'));
     tabCalendar.addEventListener('click', () => setMode('calendar'));
 
-    // Move buttons in Clock panel
+    // Person toggles: View/Hide and Move On/Off
     document.getElementById('btn-move-p1').addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!person1.visible) return; // can't move a hidden person
       setMoveState(1);
     });
 
     document.getElementById('btn-move-p2').addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!person2.visible) return;
       setMoveState(2);
+    });
+
+    document.getElementById('btn-view-p1').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setPersonVisible(person1, !person1.visible);
+    });
+
+    document.getElementById('btn-view-p2').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setPersonVisible(person2, !person2.visible);
+    });
+
+    // Double-click name label to rename
+    function startRename(person) {
+      const el = document.getElementById(`name-label-${person.prefix}`);
+      if (!el || el.classList.contains('editing')) return;
+      el.classList.add('editing');
+      el.contentEditable = 'true';
+      // Select only the name text (keep emoji prefix)
+      const full = el.textContent;
+      const nameStart = full.indexOf(person.name);
+      el.focus();
+      try {
+        const range = document.createRange();
+        const textNode = el.firstChild;
+        if (textNode && nameStart >= 0) {
+          range.setStart(textNode, nameStart);
+          range.setEnd(textNode, full.length);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          document.execCommand('selectAll', false, null);
+        }
+      } catch (_) { /* ignore selection errors */ }
+
+      const finish = () => {
+        el.classList.remove('editing');
+        el.contentEditable = 'false';
+        let text = el.textContent.replace(/[\u{1F300}-\u{1FAFF}]/gu, '').trim(); // strip emoji
+        if (!text) text = person.name;
+        person.name = text.slice(0, 20);
+        el.textContent = `${person.emoji} ${person.name}`;
+        const settingsLabel = document.getElementById(`settings-label-${person.prefix}`);
+        if (settingsLabel) settingsLabel.textContent = person.name;
+        el.removeEventListener('blur', finish);
+        el.removeEventListener('keydown', onKey);
+      };
+      const onKey = (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); }
+        if (ev.key === 'Escape') {
+          el.textContent = `${person.emoji} ${person.name}`;
+          el.blur();
+        }
+      };
+      el.addEventListener('blur', finish);
+      el.addEventListener('keydown', onKey);
+    }
+
+    document.getElementById('name-label-p1').addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      startRename(person1);
+    });
+    document.getElementById('name-label-p2').addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      startRename(person2);
     });
 
     // Settings Pop-up Toggle
