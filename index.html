@@ -187,7 +187,7 @@
       background: rgba(2, 6, 23, 0.6);
       padding: 8px;
       border-radius: 10px;
-      width: 125px; /* Slightly enlarged for stability */
+      width: 125px;
       position: relative;
     }
 
@@ -210,7 +210,6 @@
     .name-a { font-size: 10px; font-weight: 800; color: #f87171; white-space: nowrap; }
     .name-b { font-size: 10px; font-weight: 800; color: #60a5fa; white-space: nowrap; }
 
-    /* Fixed bounding box for numerical time display */
     .time-display {
       font-size: 11px;
       font-weight: 900;
@@ -466,7 +465,7 @@
     <div class="ui-panel controls-panel">
       <div>
         <div class="slider-labels">
-          <span>00:00</span>
+          <span>00:00 UTC</span>
           <span>06:00</span>
           <span>12:00</span>
           <span>18:00</span>
@@ -511,12 +510,13 @@
     controls.minDistance = 6.2;
     controls.maxDistance = 100;
 
-    // Solar Lighting Setup - Soft Ambient, Strong Directional Light for Clear Night/Day Shading
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.03);
+    // Solar Lighting Setup - Sun fixed along +X axis
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.05);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
-    sunLight.position.set(200, 0, 0);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    const sunDist = 200;
+    sunLight.position.set(sunDist, 0, 0);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
@@ -528,7 +528,7 @@
     const sunGeo = new THREE.SphereGeometry(8, 32, 32);
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-    sunMesh.position.set(200, 0, 0);
+    sunMesh.position.set(sunDist, 0, 0);
     scene.add(sunMesh);
 
     // Earth Setup
@@ -563,7 +563,7 @@
     let isPlaying = false;
     let timeInMinutes = 0;
 
-    // Peg Person Creation Helper - Standard Material reacts naturally to Sunlight shading
+    // Peg Person Creation Helper
     function createPegPerson(colorHex) {
       const group = new THREE.Group();
 
@@ -695,6 +695,8 @@
           target.lon = lon;
 
           updateAvatarPosition(target);
+          
+          // Recalculate local clocks dynamically based on new longitude position
           updateSimulation(timeInMinutes);
           
           selectedPersonIndex = null;
@@ -781,7 +783,10 @@
     function updateSimulation(minutes) {
       timeInMinutes = minutes;
 
-      const rotationAngle = (minutes / 1440) * Math.PI * 2;
+      // Real Solar Rotation Alignment:
+      // At 00:00 UTC (0 min), Prime Meridian (0° lon) points directly AWAY from the Sun (-X direction, angle = Math.PI).
+      // At 12:00 UTC (720 min), Prime Meridian points directly TOWARD the Sun (+X direction, angle = 0).
+      const rotationAngle = Math.PI - (minutes / 1440) * Math.PI * 2;
       earthGroup.rotation.y = rotationAngle;
 
       updatePersonClock(person1, minutes);
@@ -789,6 +794,7 @@
     }
 
     function updatePersonClock(person, baseMinutes) {
+      // Local solar offset based on geographic longitude (15 deg = 1 hr / 60 mins)
       const offsetMinutes = (person.lon / 360) * 1440;
       let localMinutes = (baseMinutes + offsetMinutes) % 1440;
       if (localMinutes < 0) localMinutes += 1440;
@@ -804,7 +810,14 @@
       document.getElementById(`${person.prefix}-hour-hand`).setAttribute('transform', `rotate(${hourHandAngle} 50 50)`);
       document.getElementById(`${person.prefix}-minute-hand`).setAttribute('transform', `rotate(${minuteHandAngle} 50 50)`);
 
-      const isDay = localHours >= 6 && localHours < 18;
+      // Physical Day/Night Verification using world position dot product against Sun Direction Vector (+X)
+      const worldPos = new THREE.Vector3();
+      person.mesh.getWorldPosition(worldPos);
+      
+      const sunDirection = new THREE.Vector3(1, 0, 0);
+      const dot = worldPos.clone().normalize().dot(sunDirection);
+      const isDay = dot > 0;
+
       document.getElementById(`${person.prefix}-status`).textContent = isDay ? '☀️ Day' : '🌙 Night';
     }
 
